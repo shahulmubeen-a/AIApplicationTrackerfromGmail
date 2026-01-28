@@ -1,0 +1,52 @@
+name: Job Application Tracker
+
+on:
+  schedule:
+    - cron: '1 * * * *'  # Every hour at 1 minute past
+  workflow_dispatch:  # Manual trigger button
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      
+      - name: Install Ollama
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          ollama serve &
+          sleep 10
+          ollama pull deepseek-r1:1.5b
+      
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+      
+      - name: Setup credentials
+        env:
+          GMAIL_CREDENTIALS: ${{ secrets.GMAIL_CREDENTIALS }}
+          GMAIL_TOKEN: ${{ secrets.GMAIL_TOKEN }}
+        run: |
+          echo "$GMAIL_CREDENTIALS" > credentials.json
+          echo "$GMAIL_TOKEN" > token.json
+      
+      - name: Run job tracker
+        env:
+          LLM_MODEL: deepseek-r1:1.5b
+          OUTPUT_PATH: tests/output/applications.xlsx
+          DAYS_TO_FETCH: 1
+          EMAIL_QUERY: application
+        run: python src/main.py
+      
+      - name: Upload spreadsheet artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: applications-${{ github.run_number }}
+          path: tests/output/applications.xlsx
+          retention-days: 90
