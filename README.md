@@ -58,8 +58,9 @@ python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-# Install and run Ollama
-ollama pull deepseek-r1:1.5b
+# Install and run Ollama, if you're using an Ollama model
+sudo apt install ollama
+ollama pull deepseek-r1:1.5b    # or any model you want to use, but update main_local.py to use that model
 
 # Run tests
 python tests/test_gmail_client.py
