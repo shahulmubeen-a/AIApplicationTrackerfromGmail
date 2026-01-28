@@ -3,7 +3,7 @@ import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.gmail_client import GmailClient
+from app.gmail_client import GmailClient
 
 client = GmailClient(credentials_path='credentials.json')
 print('Gmail Client initialized.')
