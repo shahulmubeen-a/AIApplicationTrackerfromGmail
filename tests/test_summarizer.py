@@ -4,7 +4,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.gmail_client import GmailClient
-from src.email_summerizer import EmailSummarizer
+from src.email_summarizer import EmailSummarizer
 
 client = GmailClient(credentials_path='credentials.json')
 print('Gmail Client initialized.')
