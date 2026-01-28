@@ -1,3 +1,6 @@
+**`README.md`:**
+
+```markdown
 # Job Application Tracker
 
 Automatically tracks job applications from Gmail and maintains an Excel spreadsheet using local LLM.
@@ -7,6 +10,8 @@ Automatically tracks job applications from Gmail and maintains an Excel spreadsh
 - Extracts key info using local Ollama models (default: deepseek-r1:1.5b)
 - Updates Excel spreadsheet with application data (Date, Company, Job Title, Status)
 - Runs hourly with smart scheduling
+- Configurable via simple config file
+- Automatic duplicate detection and removal
 
 ## Installation
 
@@ -25,8 +30,6 @@ cd AIApplicationTrackerFromGmail
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # WSL2/Linux
-# or
-.venv\Scripts\activate  # Windows
 ```
 
 ### 3. Install Dependencies
@@ -87,8 +90,8 @@ python app/main.py
 The tracker will:
 1. On first run: Fetch emails from last 7 days
 2. Create `tests/output/applications.xlsx`
-3. Schedule hourly checks (runs at 1 minute past each hour)
-4. Each hour: Check for new application emails from the last day
+3. Schedule hourly checks (runs at 1 minute past each hour by default)
+4. Each scheduled run: Check for new application emails from the last day
 
 ### Stop the Tracker
 Press `Ctrl+C` to stop the scheduler.
@@ -98,80 +101,8 @@ Open `tests/output/applications.xlsx` to see your tracked applications.
 
 ## Configuration
 
-Edit these environment variables (or modify code defaults):
-```bash
-export GMAIL_CREDENTIALS_PATH="credentials.json"  # Path to credentials
-export OUTPUT_PATH="tests/output/applications.xlsx"  # Output file
-export LLM_MODEL="deepseek-r1:1.5b"  # Ollama model to use
-export DAYS_TO_FETCH="7"  # Days to fetch on first run
-export EMAIL_QUERY="application"  # Gmail search query
-```
-
-## Testing
-
-Test individual components:
-```bash
-# Test Gmail connection
-python tests/test_gmail_client.py
-
-# Test email summarization
-python tests/test_summarizer.py
-
-# Test Excel writing
-python tests/test_sheet_manager.py
-```
-
-## Project Structure
-```
-.
-├── app/
-│   ├── __init__.py
-│   ├── gmail_client.py       # Gmail API authentication & email fetching
-│   ├── email_summarizer.py   # LLM-based email extraction
-│   ├── sheet_manager.py      # Excel file management
-│   ├── main.py               # Main scheduler (Ollama)
-│   ├── main_local.py         # Alternative local runner
-│   └── main_cloud.py         # Alternative cloud API runner
-├── tests/
-│   ├── test_gmail_client.py
-│   ├── test_summarizer.py
-│   └── test_sheet_manager.py
-├── requirements.txt
-├── credentials.json          # Gmail OAuth (gitignored)
-├── token.json               # Gmail token (gitignored)
-└── README.md
-```
-
-## Customization
-
-### Change LLM Model
-```bash
-# Pull different model
-ollama pull deepseek-r1:8b
-
-# Update in code or set env var
-export LLM_MODEL="deepseek-r1:8b"
-```
-
-### Change Email Query
-Modify the `EMAIL_QUERY` to filter different emails:
-```bash
-export EMAIL_QUERY="job application OR interview OR offer"
-```
-
-### Change Schedule
-Edit `app/main.py` line with `scheduler.add_job()`:
-```python
-# Run every 30 minutes
-scheduler.add_job(run_job_tracker, 'cron', minute='*/30', ...)
-
-# Run every 6 hours
-scheduler.add_job(run_job_tracker, 'cron', hour='*/6', minute=0, ...)
-```
-
-## Configuration
-
 All settings can be edited in `app/config.py`:
+
 ```python
 # Gmail OAuth Credentials
 GMAIL_CREDENTIALS_PATH = 'credentials.json'
@@ -204,11 +135,17 @@ SCHEDULE_HOUR = '*'
 
 **Run twice daily (9 AM and 5 PM):**
 ```python
-SCHEDULE_MINUTE = 0             # setting 5 will run the tracker 5 minutes after the schedule hour
-SCHEDULE_HOUR = '9,17'          # 24-hr format for hours
+SCHEDULE_MINUTE = 0             # 0 runs at exactly the hour, 5 would run 5 minutes past
+SCHEDULE_HOUR = '9,17'          # 24-hour format
 ```
 
-**Change email search:**
+**Run every 6 hours:**
+```python
+SCHEDULE_MINUTE = 0
+SCHEDULE_HOUR = '*/6'
+```
+
+**Change email search query:**
 ```python
 EMAIL_QUERY = 'job application OR interview OR offer'
 ```
@@ -217,6 +154,36 @@ EMAIL_QUERY = 'job application OR interview OR offer'
 ```python
 LLM_MODEL = 'deepseek-r1:8b'  # Remember to: ollama pull deepseek-r1:8b
 ```
+
+**Change output location:**
+```python
+OUTPUT_PATH = '/path/to/your/applications.xlsx'
+```
+
+## Testing
+
+Test individual components:
+
+```bash
+# Test Gmail connection
+python tests/test_gmail_client.py
+
+# Test email summarization
+python tests/test_summarizer.py
+
+# Test Excel writing
+python tests/test_sheet_manager.py
+```
+
+## Data Format
+
+The Excel file contains:
+- **Date**: DD.MM.YYYY format
+- **Company**: Company name
+- **Job Title**: Position applied for
+- **Status**: Applied, Rejected, Interview Scheduled, Offer Received
+
+Duplicates based on Date + Company + Job Title are automatically removed, keeping the most recent entry.
 
 ## Troubleshooting
 
@@ -233,28 +200,75 @@ ps aux | grep ollama
 # Restart Ollama
 pkill ollama
 ollama serve &
+
+# Test Ollama
+ollama list
 ```
 
 ### No Emails Found
 - Check your Gmail search query matches your emails
-- Verify date range (first run checks 7 days by default)
+- Verify date range (first run checks 7 days by default in `config.py`)
 - Test with: `python tests/test_gmail_client.py`
+- Try broader search query: `EMAIL_QUERY = 'application OR job OR interview'`
 
 ### Excel File Issues
-- Make sure `tests/output/` directory exists
+- Make sure `tests/output/` directory exists (created automatically)
 - Check write permissions
 - Delete existing Excel file to start fresh
+- Verify `OUTPUT_PATH` in `config.py` is correct
 
-## Data Format
+### LLM Extraction Issues
+- Check Ollama is running: `ollama list`
+- Verify model is downloaded: `ollama pull deepseek-r1:1.5b`
+- Try a different model in `config.py`
+- Check extraction with: `python tests/test_summarizer.py`
 
-The Excel file contains:
-- **Date**: DD.MM.YYYY format
-- **Company**: Company name
-- **Job Title**: Position applied for
-- **Status**: Applied, Rejected, Interview Scheduled, Offer Received
+### Column Mismatch Error
+If you see "Length mismatch: Expected axis has X elements, new values have Y elements":
+- This was fixed in the updated `sheet_manager.py`
+- Delete the existing Excel file and run again
+- The new version doesn't force column renaming
 
-Duplicates based on Date + Company + Job Title are automatically removed.
+### Scheduler Not Running
+- Check if `.first_run_completed` exists - delete it to reset
+- Verify `SCHEDULE_MINUTE` and `SCHEDULE_HOUR` in `config.py`
+- Check console output for scheduler confirmation message
+
+## Advanced Usage
+
+### Reset First Run
+To re-fetch the last 7 days of emails:
+```bash
+rm .first_run_completed
+python app/main.py
+```
+
+### Manual Single Run (No Scheduler)
+Edit `app/main.py` and modify the `main()` function to just call:
+```python
+def main():
+    run_job_tracker(is_initial_run=True)
+```
+
+### Custom Email Processing
+Edit `app/email_summarizer.py` to customize how emails are processed and what data is extracted.
+
+### Using Different Date Formats
+Edit `DATE_FORMAT` in `app/config.py`. Note: You'll need to update the date parsing logic in `sheet_manager.py` accordingly.
+
+## Tips
+
+- The tracker uses Gmail's search syntax - learn more at [Gmail Search Operators](https://support.google.com/mail/answer/7190)
+- First run might take longer depending on number of emails
+- Ollama models run locally - no data sent to external servers (except Gmail API)
+- Excel file is updated incrementally - existing data is preserved
+- For best results, use specific email queries like `"application" OR "applied" OR "applied for"`
+
+## Contributing
+
+Feel free to submit issues and enhancement requests!
 
 ## License
 
 MIT
+```
