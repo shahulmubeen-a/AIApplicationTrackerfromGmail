@@ -169,6 +169,55 @@ scheduler.add_job(run_job_tracker, 'cron', minute='*/30', ...)
 scheduler.add_job(run_job_tracker, 'cron', hour='*/6', minute=0, ...)
 ```
 
+## Configuration
+
+All settings can be edited in `app/config.py`:
+```python
+# Gmail OAuth Credentials
+GMAIL_CREDENTIALS_PATH = 'credentials.json'
+
+# Output Excel File Path
+OUTPUT_PATH = 'tests/output/applications.xlsx'
+
+# LLM Model Configuration
+LLM_MODEL = 'deepseek-r1:1.5b'
+
+# Email Fetch Settings
+DAYS_TO_FETCH = 7               # Days to fetch on first run
+EMAIL_QUERY = 'application'     # Gmail search query
+
+# Scheduler Settings
+SCHEDULE_MINUTE = 1             # Minute past the hour to run (0-59)
+SCHEDULE_HOUR = '*'             # Hour to run (* for every hour, or specific like '9,17')
+
+# Date Format
+DATE_FORMAT = 'DD.MM.YYYY'
+```
+
+### Common Customizations
+
+**Run every 30 minutes:**
+```python
+SCHEDULE_MINUTE = '*/30'
+SCHEDULE_HOUR = '*'
+```
+
+**Run twice daily (9 AM and 5 PM):**
+```python
+SCHEDULE_MINUTE = 0             # setting 5 will run the tracker 5 minutes after the schedule hour
+SCHEDULE_HOUR = '9,17'          # 24-hr format for hours
+```
+
+**Change email search:**
+```python
+EMAIL_QUERY = 'job application OR interview OR offer'
+```
+
+**Use different Ollama model:**
+```python
+LLM_MODEL = 'deepseek-r1:8b'  # Remember to: ollama pull deepseek-r1:8b
+```
+
 ## Troubleshooting
 
 ### Gmail Authentication Issues
