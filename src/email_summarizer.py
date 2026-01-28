@@ -24,7 +24,8 @@ class EmailSummarizer:
                 if application_data:
                     applications.append(application_data)
             except Exception as e:
-                print(f"Error processing email {email.get('id')}: {e}")
+                email_id = email.get('id') if isinstance(email, dict) else 'unknown'
+                print(f"Error processing email {email_id}: {e}")
                 continue
         
         return applications
@@ -33,11 +34,11 @@ class EmailSummarizer:
         """Extract structured job application data from a single email."""
 
         prompt = f"""
-        Extract job application information from this email and return ONLY a JSON object with these EXACT fields:
-            - date: application date (DD.MM.YYYY format)
+            Extract job application information from this email and return ONLY a JSON object with these exact fields:
+            - date: application date (YYYY-MM-DD format)
             - company: company name
             - job_title: job position title
-            - status: one of [applied, rejected, interview_scheduled, offer_received, other]
+            - status: one of [Applied, Rejected, Interview Scheduled, Offer Received, Other]
 
             Email Details:
             From: {email.get('from', 'Unknown')}
@@ -46,16 +47,14 @@ class EmailSummarizer:
             Body:
             {email.get('body', email.get('snippet', ''))}
 
-        Return ONLY valid JSON, no explanation or markdown."""
+            Return ONLY valid JSON, no explanation or markdown:
+            """
 
         response = ollama.chat(
-                model=self.model,
-                messages=[{
-                    'role': 'user',
-                    'content': prompt
-                }],
-                format='json'
-            )
+            model=self.model,
+            messages=[{'role': 'user', 'content': prompt}],
+            format='json'
+        )
         
         content = response['message']['content']
         
@@ -67,7 +66,7 @@ class EmailSummarizer:
             required_fields = ['date', 'company', 'job_title', 'status']
             if not all(field in data for field in required_fields):
                 return {}
-        
+            
             return data
         
         except json.JSONDecodeError:
