@@ -25,23 +25,16 @@ class SheetManager:
         # Create DataFrame from new applications
         new_df = pd.DataFrame(applications)
         
-        # Ensure columns are in the right order with Title Case
-        columns = ['Date', 'Company', 'Job Title', 'Status']
-        
-        # Rename columns to Title Case
-        new_df.columns = ['Date', 'Company', 'Job Title', 'Status']
-        new_df = new_df[columns]
-        
         # Filter out invalid entries (null dates, empty companies, etc.)
         initial_count = len(new_df)
         new_df = new_df[
-            (new_df['Date'].notna()) & 
-            (new_df['Date'] != 'null') & 
-            (new_df['Date'] != '') &
-            (new_df['Company'].notna()) & 
-            (new_df['Company'] != '') &
-            (new_df['Job Title'].notna()) & 
-            (new_df['Job Title'] != '')
+            (new_df['date'].notna()) & 
+            (new_df['date'] != 'null') & 
+            (new_df['date'] != '') &
+            (new_df['company'].notna()) & 
+            (new_df['company'] != '') &
+            (new_df['job_title'].notna()) & 
+            (new_df['job_title'] != '')
         ]
         
         if len(new_df) < initial_count:
@@ -50,6 +43,14 @@ class SheetManager:
         if len(new_df) == 0:
             print("No valid applications after filtering.")
             return self.output_path
+        
+        # Rename columns to Title Case for consistency
+        new_df = new_df.rename(columns={
+            'date': 'Date',
+            'company': 'Company',
+            'job_title': 'Job Title',
+            'status': 'Status'
+        })
         
         # If file exists, load and merge
         if os.path.exists(self.output_path):
@@ -64,9 +65,13 @@ class SheetManager:
         else:
             combined_df = new_df
         
-        # Sort by Date (most recent first)
-        combined_df['Date'] = pd.to_datetime(combined_df['Date'])
-        combined_df = combined_df.sort_values('Date', ascending=False)
+        # Sort by Date (most recent first) - handle DD.MM.YYYY format
+        try:
+            combined_df['Date'] = pd.to_datetime(combined_df['Date'], dayfirst=True, errors='coerce')
+            combined_df = combined_df.sort_values('Date', ascending=False)
+            
+        except Exception as e:
+            print(f"Warning: Could not sort by date: {e}")
         
         # Write to Excel
         combined_df.to_excel(self.output_path, index=False, engine='openpyxl')

@@ -35,7 +35,7 @@ class EmailSummarizer:
 
         prompt = f"""
             Extract job application information from this email and return ONLY a JSON object with these exact fields:
-            - date: application date (YYYY-MM-DD format)
+            - date: application date (DD.MM.YYYY format)
             - company: company name
             - job_title: job position title
             - status: one of [Applied, Rejected, Interview Scheduled, Offer Received, Other]

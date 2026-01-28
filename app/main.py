@@ -1,5 +1,5 @@
 """
-Main orchestration script for job application tracker.
+Main orchestration script for job application tracker using local Ollama.
 Fetches emails, extracts job application data, and updates Excel sheet.
 """
 
@@ -10,9 +10,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from datetime import datetime
-from src.gmail_client import GmailClient
-from src.email_summarizer import EmailSummarizer
-from src.sheet_manager import SheetManager
+from app.gmail_client import GmailClient
+from app.email_summarizer import EmailSummarizer
+from app.sheet_manager import SheetManager
 
 # Marker file to track first run
 FIRST_RUN_MARKER = '.first_run_completed'
@@ -20,13 +20,11 @@ FIRST_RUN_MARKER = '.first_run_completed'
 
 def is_first_run():
     """Check if this is the first run of the application."""
-    
     return not os.path.exists(FIRST_RUN_MARKER)
 
 
 def mark_first_run_complete():
     """Create marker file to indicate first run is complete."""
-
     with open(FIRST_RUN_MARKER, 'w') as f:
         f.write(datetime.now().isoformat())
 
@@ -85,16 +83,9 @@ def run_job_tracker(is_initial_run=False):
 
 def main():
     """Run with smart scheduling: first run checks 7 days, then hourly at 1 minute past."""
-
-    # Check if running in GitHub Actions
-    if os.getenv('GITHUB_ACTIONS') == 'true':
-        print("Running in GitHub Actions - single execution mode")
-        run_job_tracker(is_initial_run=False)
-        return
     
     # Check if this is the first run
     if is_first_run():
-        print("First run detected. Fetching emails from last 7 days...")
         run_job_tracker(is_initial_run=True)
         mark_first_run_complete()
         
@@ -112,14 +103,14 @@ def main():
             id='hourly_email_check'
         )
         
-        print("Scheduler started. Job will run at 1 minute past every hour. Press Ctrl+C to exit.")
+        print("Scheduler started. The tracker will run at 1 minute past every hour. Press Ctrl+C to exit.")
         try:
             scheduler.start()
         except (KeyboardInterrupt, SystemExit):
             print("Scheduler stopped.")
     else:
         # Subsequent runs - start the scheduler
-        print("Scheduler starting. Job will run at 1 minute past every hour. Press Ctrl+C to exit.")
+        print("Scheduler starting. The tracker will run at 1 minute past every hour. Press Ctrl+C to exit.")
         scheduler = BlockingScheduler()
         
         # Schedule to run at 1 minute past every hour
