@@ -1,6 +1,3 @@
-**`README.md`:**
-
-```markdown
 # Job Application Tracker
 
 Automatically tracks job applications from Gmail and maintains an Excel spreadsheet using local LLM.
@@ -24,7 +21,7 @@ Automatically tracks job applications from Gmail and maintains an Excel spreadsh
 ```bash
 git clone <your-repo-url>
 cd AIApplicationTrackerFromGmail
-```
+
 
 ### 2. Set Up Python Environment
 ```bash
