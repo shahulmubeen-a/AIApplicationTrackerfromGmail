@@ -5,11 +5,12 @@ Summarizes email content and parses them into JSON for further processing.
 import json
 import ollama
 from typing import List, Dict
+from app import config
 
 
 class EmailSummarizer:
-    def __init__(self, model: str = "deepseek-r1:8b"):
-        self.model = model
+    def __init__(self, model: str = ''):
+        self.model = model or config.LLM_MODEL
     
     def summarize_emails(self, emails: List[Dict]) -> List[Dict]:
         """
@@ -35,7 +36,7 @@ class EmailSummarizer:
 
         prompt = f"""
             Extract job application information from this email and return ONLY a JSON object with these exact fields:
-            - date: application date (DD.MM.YYYY format)
+            - date: application date ({config.DATE_FORMAT} format)
             - company: company name
             - job_title: job position title
             - status: one of [Applied, Rejected, Interview Scheduled, Offer Received, Other]
